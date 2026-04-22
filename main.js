@@ -1,9 +1,10 @@
 import pc from 'picocolors';
+import { spawnSync } from 'child_process';
 import { intro, outro, select, text, confirm, isCancel, log } from '@clack/prompts';
 import { loadProjects, addProject, removeProject, updateSettings, getSettings } from './lib/config.js';
 import processManager from './lib/process-manager.js';
 import logStore from './lib/log-store.js';
-import { checkAllForUpdates } from './lib/git-ops.js';
+import { checkAllForUpdates, checkCliForUpdates } from './lib/git-ops.js';
 import Dashboard from './lib/ui.js';
 import { pickSuccess, pickFarewell, pickError, pickCrash } from './lib/flair.js';
 import { terminalTheme } from './lib/theme.js';
@@ -461,6 +462,7 @@ async function settingsMenu() {
         { value: 'cooldown', label: 'Crash Cooldown',       hint: `${settings.crashCooldownMins}m pause` },
         { value: 'poll',     label: 'Git Poll Interval',    hint: `every ${settings.pollInterval}s` },
         { value: 'buffer',   label: 'Log Buffer Size',      hint: `${settings.logBufferSize} lines/project` },
+        { value: 'autoUpdate', label: 'Auto Update CLI',    hint: settings.autoUpdateCli !== false ? 'Enabled' : 'Disabled' },
         { value: 'back',     label: 'Back' },
       ],
     })
@@ -572,6 +574,18 @@ async function settingsMenu() {
       }
       break;
     }
+    case 'autoUpdate': {
+      const v = handleCancel(
+        await confirm({ message: 'Enable Auto Update for CLI?', initialValue: settings.autoUpdateCli !== false })
+      );
+      {
+        const cancelValue = getCancelReturn(v);
+        if (cancelValue) return cancelValue;
+      }
+      updateSettings({ autoUpdateCli: v });
+      log.success(`Auto Update CLI → ${v ? 'Enabled' : 'Disabled'}. ${dim(pickSuccess())}`);
+      break;
+    }
   }
 
   return settingsMenu();
@@ -593,6 +607,19 @@ async function shutdownAndExit() {
 async function main() {
   const data = loadProjects();
   const settings = getSettings();
+
+  if (settings.autoUpdateCli !== false) {
+    const s = animatedSpinner();
+    s.start('Checking for CLI updates');
+    const updated = await checkCliForUpdates(settings);
+    if (updated) {
+      s.stop(`✅ CLI updated. Restarting...`);
+      spawnSync(process.argv[0], process.argv.slice(1), { stdio: 'inherit' });
+      process.exit(0);
+    }
+    s.stop();
+  }
+
   logStore.setBufferSize(settings.logBufferSize);
 
   dashboard = new Dashboard(data.projects);
