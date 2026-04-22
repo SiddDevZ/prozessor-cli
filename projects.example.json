@@ -1,0 +1,19 @@
+{
+  "projects": [
+    {
+      "name": "my-project",
+      "repoUrl": "git@github.com:your-org/your-project.git",
+      "branch": "main",
+      "envSrc": ".env.my-project",
+      "subdir": "backend",
+      "entrypoint": "server.js",
+      "enabled": true
+    }
+  ],
+  "settings": {
+    "pollInterval": 20,
+    "logBufferSize": 500,
+    "maxCrashRetries": 4,
+    "crashCooldownMins": 2
+  }
+}
