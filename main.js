@@ -608,18 +608,6 @@ async function main() {
   const data = loadProjects();
   const settings = getSettings();
 
-  if (settings.autoUpdateCli !== false) {
-    const s = animatedSpinner();
-    s.start('Checking for CLI updates');
-    const updated = await checkCliForUpdates(settings);
-    if (updated) {
-      s.stop(`✅ CLI updated. Restarting...`);
-      spawnSync(process.argv[0], process.argv.slice(1), { stdio: 'inherit' });
-      process.exit(0);
-    }
-    s.stop();
-  }
-
   logStore.setBufferSize(settings.logBufferSize);
 
   dashboard = new Dashboard(data.projects);
@@ -627,6 +615,10 @@ async function main() {
   function launchDashboard() {
     const freshData = loadProjects();
     dashboard.projects = freshData.projects;
+    dashboard._lastLogSignature = '';
+    dashboard._lastStatusContent = '';
+    dashboard._lastCommandContent = '';
+    dashboard._pendingLogsRefresh = true;
     dashboard.init();
 
     dashboard.onMenuRequested = async () => {
@@ -657,6 +649,25 @@ async function main() {
   }
 
   launchDashboard();
+
+  // CLI auto-update check (runs in background, status shown in TUI)
+  if (settings.autoUpdateCli !== false) {
+    logStore.push('PROZESSOR', '🔍 Checking for CLI updates...', 'stdout');
+    try {
+      const updated = await checkCliForUpdates(settings);
+      if (updated) {
+        logStore.push('PROZESSOR', '✅ CLI updated! Restarting...', 'stdout');
+        await new Promise(r => setTimeout(r, 1200));
+        if (dashboard) dashboard.destroy();
+        spawnSync(process.argv[0], process.argv.slice(1), { stdio: 'inherit' });
+        process.exit(0);
+      } else {
+        logStore.push('PROZESSOR', '✅ CLI is up to date.', 'stdout');
+      }
+    } catch {
+      logStore.push('PROZESSOR', '⚠ Could not check for CLI updates.', 'stderr');
+    }
+  }
 
   await processManager.initializeAll(data.projects);
 
