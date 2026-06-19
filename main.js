@@ -253,7 +253,7 @@ async function startFlow() {
   const proj = projects.find((p) => p.name === name);
   const s = animatedSpinner();
   s.start(`Waking up ${name}`);
-  processManager.startProject(proj);
+  await processManager.startProject(proj);
 
   await new Promise((r) => setTimeout(r, 1500));
   const status = processManager.getStatus(name);
@@ -396,7 +396,7 @@ async function addProjectFlow() {
         s.start('Installing dependencies');
         await prepareProject(proj);
         s.stop(`✅ Dependencies installed.`);
-        processManager.startProject(proj);
+        await processManager.startProject(proj);
         log.success(`${name.trim()} is live! ${dim(pickSuccess())}`);
 
         if (dashboard) dashboard.updateProjects(data.projects);
@@ -681,6 +681,8 @@ let sigintCount = 0;
 process.on('SIGINT', async () => {
   sigintCount++;
   if (sigintCount >= 2) {
+    // force-quit: no time to await, synchronously reap every process tree
+    processManager.killAllSync();
     process.exit(1);
   }
   if (dashboard) dashboard.destroy();
@@ -695,7 +697,11 @@ process.on('uncaughtException', async (err) => {
   if (dashboard) dashboard.destroy();
   console.error(pc.red(`\n  Fatal error: ${err.message} ${dim(pickCrash())}`));
   console.error(err.stack);
-  await processManager.shutdownAll();
+  try {
+    await processManager.shutdownAll();
+  } catch {}
+  // final safety net so no service is left holding a port on a crash
+  processManager.killAllSync();
   process.exit(1);
 });
 

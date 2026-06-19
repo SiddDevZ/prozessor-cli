@@ -1,0 +1,2 @@
+# Managed repositories are cloned into this directory at runtime.
+# The directory is kept in git; its contents are ignored.

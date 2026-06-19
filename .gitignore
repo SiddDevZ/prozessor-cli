@@ -3,8 +3,13 @@ node_modules/
 
 # Runtime state and local machine data
 projects.json
+.prozessor-state.json
 envs/.env*
 !envs/.env.example
+
+# Managed repositories cloned at runtime (may be private and contain secrets)
+projects/*
+!projects/.gitkeep
 
 # Logs
 *.log

@@ -4,7 +4,8 @@
   "type": "module",
   "main": "main.js",
   "scripts": {
-    "start": "node main.js"
+    "start": "node main.js",
+    "test": "node --test --test-force-exit --test-timeout=30000 test/smoke.test.js test/port-utils.test.js test/state-store.test.js test/process-manager.test.js test/git-ops.test.js"
   },
   "description": "PROZESSOR: terminal process manager for multi-project deployments.",
   "dependencies": {

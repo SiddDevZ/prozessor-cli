@@ -16,7 +16,7 @@ Prozessor is a lightweight terminal process manager. Instead of juggling multipl
 ### Key Features
 *   🔄 **Automated Git Ops**: Auto-clones your project repos and periodically checks for branch updates.
 *   📊 **Live TUI Dashboard**: Monitor all your services in one terminal window with multiplexed log streaming.
-*   🛡️ **Resilient**: Automatic process restarts, crash retries, and cooldown periods keep your services healthy.
+*   🛡️ **Resilient**: Whole-tree process shutdown, automatic port reclamation (pre-start, on `EADDRINUSE`, and across sessions), crash retries, and cooldown periods keep your services healthy and ports clean.
 *   🪶 **Lightweight**: Plain Node.js (ESM), zero build steps, and no heavy dependencies.
 
 ---
@@ -34,7 +34,7 @@ Ensure you have the following installed on your system:
 Clone PROZESSOR to your local machine and install its dependencies:
 ```bash
 git clone https://github.com/SiddDevZ/prozessor-cli.git
-cd prozessor
+cd prozessor-cli
 npm install
 ```
 
@@ -72,6 +72,7 @@ Each project entry in your `projects.json` supports the following:
 | `envSrc` | Env filename inside the `envs/` folder *(Optional)* | - |
 | `subdir` | Project subdirectory where the Node service lives | `backend` |
 | `entrypoint` | Node entry file to run | `server.js` |
+| `port` | Port the service listens on. When set, Prozessor reclaims this port before (re)starting so a stale process can never block a fresh start *(Optional)* | auto-detected |
 | `enabled` | Whether it should manage this project | `true` |
 
 **Global Application Settings:**
@@ -102,6 +103,8 @@ prozessor/
 │   ├── config.js
 │   ├── git-ops.js
 │   ├── process-manager.js
+│   ├── port-utils.js
+│   ├── state-store.js
 │   ├── log-store.js
 │   ├── theme.js
 │   ├── ui.js
@@ -111,6 +114,7 @@ prozessor/
 ├── projects/                 # Managed repositories are cloned here
 ├── main.js                   # Application Entrypoint
 ├── projects.json             # Your local configuration
+├── .prozessor-state.json     # Runtime state for cross-session cleanup (gitignored)
 ├── package.json
 └── .gitignore
 ```
