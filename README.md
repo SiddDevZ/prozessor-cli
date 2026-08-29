@@ -72,6 +72,9 @@ Each project entry in your `projects.json` supports the following:
 | `envSrc` | Env filename inside the `envs/` folder *(Optional)* | - |
 | `subdir` | Project subdirectory where the Node service lives | `backend` |
 | `entrypoint` | Node entry file to run | `server.js` |
+| `command` | Shell command to run instead of `node <entrypoint>`, e.g. `npm run dev`. Spawned in its own process group, so shutdown still reaps the whole tree *(Optional)* | - |
+| `installCmd` | Install command run before start and after every update. Override it when the project needs its devDependencies *(Optional)* | `npm install --production --silent` |
+| `resetOnUpdate` | On update, hard-reset to the tracked branch instead of stashing local changes. Use it for projects that rewrite their own tracked files at runtime. Gitignored paths (`node_modules/`, caches, browser profiles) are preserved *(Optional)* | `false` |
 | `port` | Port the service listens on. When set, Prozessor reclaims this port before (re)starting so a stale process can never block a fresh start *(Optional)* | auto-detected |
 | `enabled` | Whether it should manage this project | `true` |
 
